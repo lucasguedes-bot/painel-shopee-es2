@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react';
-import { supabase } from './supabaseClient';
+
+// Supabase mock local até configurarmos a tabela final
+const supabaseMock = {
+  from: (_table: string) => ({
+    select: (_query: string) => Promise.resolve({ data: null, error: null }),
+  }),
+};
 
 interface ItemRanking {
   name: string;
@@ -99,7 +105,7 @@ const MOCK_DATA: FullData = {
 };
 
 export default function App() {
-  const [fullData, setFullData] = useState<FullData | null>(MOCK_DATA);
+  const [fullData] = useState<FullData | null>(MOCK_DATA);
   const [currentEsteira, setCurrentEsteira] = useState<string>('geral');
   const [shiftSelect, setShiftSelect] = useState<string>('T2');
   const [turnoGestores, setTurnoGestores] = useState<string>('ALL');
@@ -122,25 +128,19 @@ export default function App() {
   }, []);
 
   const fetchData = async () => {
-  setIsRefreshing(true);
-  try {
-    // Busca todas as linhas da tabela "bips"
-    const { data, error } = await supabase
-      .from('bips')
-      .select('*');
-
-    if (error) throw error;
-
-    if (data) {
-      // Aqui você vai formatar os dados que vieram do banco
-      console.log('Dados do Supabase:', data);
+    setIsRefreshing(true);
+    try {
+      const { data, error } = await supabaseMock.from('bips').select('*');
+      if (error) throw error;
+      if (data) {
+        console.log('Dados do Supabase:', data);
+      }
+    } catch (err) {
+      console.error('Erro ao buscar dados:', err);
+    } finally {
+      setIsRefreshing(false);
     }
-  } catch (err) {
-    console.error('Erro ao buscar dados:', err);
-  } finally {
-    setIsRefreshing(false);
-  }
-};
+  };
   
   useEffect(() => {
     fetchData();
