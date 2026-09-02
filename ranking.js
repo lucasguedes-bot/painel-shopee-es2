@@ -23,19 +23,26 @@ export async function obterDadosRanking() {
   };
 
   try {
+    // Busca os 1000 registros mais recentes da tabela produtividade
     const { data: dataRows, error } = await supabase
       .from('produtividade')
       .select('*')
       .order('id', { ascending: false })
       .limit(1000);
 
-    if (error || !dataRows || dataRows.length === 0) {
-      if (error) console.error('Erro ao buscar dados na tabela produtividade:', error);
+    if (error) {
+      console.error('Erro no Supabase:', error);
+      return result;
+    }
+
+    if (!dataRows || dataRows.length === 0) {
+      console.warn('Nenhum dado encontrado na tabela produtividade.');
       return result;
     }
 
     const turnos = ['T1', 'T2', 'T3'];
 
+    // Processa os dados reais para cada turno
     turnos.forEach((turnoAtual) => {
       const mapGeralOps = new Map();
       const mapTermoOps = new Map();
@@ -58,7 +65,8 @@ export async function obterDadosRanking() {
         const opsCode = extrairOps(rawCell);
         const fullName = extrairNomeCompleto(rawCell);
         
-        const nameOpsFormat = opsCode ? `${opsCode} ${fullName}` : fullName || 'DESCONHECIDO';
+        // Se não houver nome, usa o opsCode ou "-"
+        const nameOpsFormat = opsCode ? (fullName ? `${opsCode} ${fullName}` : opsCode) : (fullName || 'OPERADOR');
 
         const workstation = String(row.workstation || '').toLowerCase();
         const atividade = String(row.atividade || '').toLowerCase();
@@ -76,7 +84,7 @@ export async function obterDadosRanking() {
           const isLona = workstation.includes('lona') || workstation.includes('p1') || workstation.includes('doca') || atividade.includes('line haul') || atividade.includes('p1');
           const isInbound = workstation.includes('receb') || workstation.includes('inbound') || atividade.includes('receiving') || atividade.includes('received') || atividade.includes('inbound');
 
-          if (isTermo || isLona) {
+          if (isTermo || isLona || (!isTermo && !isLona && !isInbound)) {
             totalGeralBips += totalBips;
             mapGeralOps.set(nameOpsFormat, (mapGeralOps.get(nameOpsFormat) || 0) + totalBips);
           }
@@ -84,7 +92,7 @@ export async function obterDadosRanking() {
           if (isTermo) {
             totalTermo += totalBips;
             mapTermoOps.set(nameOpsFormat, (mapTermoOps.get(nameOpsFormat) || 0) + totalBips);
-            mapTermoNomes.set(fullName, (mapTermoNomes.get(fullName) || 0) + totalBips);
+            mapTermoNomes.set(fullName || opsCode, (mapTermoNomes.get(fullName || opsCode) || 0) + totalBips);
 
             if (!mapHorasTermo.has(horaStr)) mapHorasTermo.set(horaStr, new Map());
             mapHorasTermo.get(horaStr).set(nameOpsFormat, (mapHorasTermo.get(horaStr).get(nameOpsFormat) || 0) + totalBips);
@@ -92,7 +100,7 @@ export async function obterDadosRanking() {
           } else if (isLona) {
             totalLona += totalBips;
             mapLonaOps.set(nameOpsFormat, (mapLonaOps.get(nameOpsFormat) || 0) + totalBips);
-            mapLonaNomes.set(fullName, (mapLonaNomes.get(fullName) || 0) + totalBips);
+            mapLonaNomes.set(fullName || opsCode, (mapLonaNomes.get(fullName || opsCode) || 0) + totalBips);
 
             if (!mapHorasLona.has(horaStr)) mapHorasLona.set(horaStr, new Map());
             mapHorasLona.get(horaStr).set(nameOpsFormat, (mapHorasLona.get(horaStr).get(nameOpsFormat) || 0) + totalBips);
@@ -155,7 +163,7 @@ export async function obterDadosRanking() {
 
     return result;
   } catch (err) {
-    console.error('Erro na leitura da tabela produtividade:', err);
+    console.error('Erro na execução de obterDadosRanking:', err);
     return result;
   }
 }
