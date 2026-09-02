@@ -26,7 +26,8 @@ export async function obterDadosRanking() {
     const { data: dataRows, error } = await supabase
       .from('produtividade')
       .select('*')
-      .order('hora_entrada', { ascending: false });
+      .order('id', { ascending: false })
+      .limit(1000);
 
     if (error || !dataRows || dataRows.length === 0) {
       if (error) console.error('Erro ao buscar dados na tabela produtividade:', error);
@@ -36,8 +37,7 @@ export async function obterDadosRanking() {
     const turnos = ['T1', 'T2', 'T3'];
 
     turnos.forEach((turnoAtual) => {
-      const rowsTurno = dataRows.filter((r) => !r.turno || r.turno === turnoAtual);
-
+      const mapGeralOps = new Map();
       const mapTermoOps = new Map();
       const mapLonaOps = new Map();
       const mapTermoNomes = new Map();
@@ -50,8 +50,9 @@ export async function obterDadosRanking() {
       let totalTermo = 0;
       let totalLona = 0;
       let totalInbound = 0;
+      let totalGeralBips = 0;
 
-      rowsTurno.forEach((row) => {
+      dataRows.forEach((row) => {
         const totalBips = parseInt(row.processado || 0, 10);
         const rawCell = row.ops_id || '';
         const opsCode = extrairOps(rawCell);
@@ -62,7 +63,7 @@ export async function obterDadosRanking() {
         const workstation = String(row.workstation || '').toLowerCase();
         const atividade = String(row.atividade || '').toLowerCase();
 
-        let horaStr = 'Sem Hora';
+        let horaStr = '00:00';
         if (row.hora_entrada) {
           const d = new Date(row.hora_entrada);
           if (!isNaN(d.getTime())) {
@@ -74,6 +75,11 @@ export async function obterDadosRanking() {
           const isTermo = workstation.includes('termo') || workstation.includes('p2') || atividade.includes('packing') || atividade.includes('p2');
           const isLona = workstation.includes('lona') || workstation.includes('p1') || workstation.includes('doca') || atividade.includes('line haul') || atividade.includes('p1');
           const isInbound = workstation.includes('receb') || workstation.includes('inbound') || atividade.includes('receiving') || atividade.includes('received') || atividade.includes('inbound');
+
+          if (isTermo || isLona) {
+            totalGeralBips += totalBips;
+            mapGeralOps.set(nameOpsFormat, (mapGeralOps.get(nameOpsFormat) || 0) + totalBips);
+          }
 
           if (isTermo) {
             totalTermo += totalBips;
@@ -113,6 +119,11 @@ export async function obterDadosRanking() {
             .sort((a, b) => b.bipsHora - a.bipsHora)
             .slice(0, 10),
         }));
+
+      result.geral.shiftRanking[turnoAtual] = {
+        totalBipsGeral: totalGeralBips,
+        rankingTotal: toSortedArray(mapGeralOps),
+      };
 
       result.p2_termo.shiftRanking[turnoAtual] = {
         totalBipsGeral: totalTermo,
