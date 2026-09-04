@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ranking de Produtividade Shopee</title>
+  <style>
+    :root {
+      --shopee-orange: #EE4D2D;
+      --shopee-orange-dark: #d73211;
+      --bg-color: #f5f5f5;
+      --card-bg: #ffffff;
+      --text-main: #222222;
+      --text-muted: #666666;
+      --border: #e2e8f0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .header-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+      background: var(--card-bg);
+      padding: 14px 20px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-group button {
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 10px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.8rem;
+      transition: all 0.2s ease;
+    }
+
+    .btn-group button.active {
+      background: var(--shopee-orange);
+      border-color: var(--shopee-orange);
+      color: #fff;
+    }
+
+    .controls-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn-refresh {
+      background: #10b981;
+      border: 1px solid #059669;
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+
+    .btn-refresh:hover {
+      background: #059669;
+    }
+
+    .banner-total {
+      background: linear-gradient(135deg, #EE4D2D 0%, #ff7337 100%);
+      color: #fff;
+      padding: 18px 24px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 15px rgba(238, 77, 45, 0.25);
+    }
+
+    .banner-total h2 {
+      margin: 0;
+      font-size: 1.2rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .banner-total .val {
+      font-size: 2.2rem;
+      font-weight: 900;
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .card-hora { border-top: 5px solid var(--shopee-orange); }
+    .card-total { border-top: 5px solid #f59e0b; }
+    .card-total-full { border-top: 5px solid #f59e0b; grid-column: 1 / -1; }
+    .card-gestores { border-top: 5px solid #2563eb; grid-column: 1 / -1; }
+
+    .card h3 {
+      margin-top: 0;
+      font-size: 1rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+    }
+
+    .gestores-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .gestores-split {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .sub-title {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: var(--shopee-orange);
+      margin-top: 6px;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+    }
+
+    th, td {
+      padding: 6px 8px;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+
+    th {
+      color: var(--text-muted);
+      border-bottom: 2px solid #f1f5f9;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+    }
+
+    td.rank { font-weight: 800; width: 30px; }
+    tr:nth-child(1) td.rank { color: #d97706; }
+    tr:nth-child(2) td.rank { color: #64748b; }
+    tr:nth-child(3) td.rank { color: #b45309; }
+
+    td.bips {
+      text-align: right;
+      font-weight: 800;
+      color: var(--shopee-orange);
+    }
+
+    tr:nth-child(even) { background: #f8fafc; }
+
+    /* ESTILOS DO MODAL DE SENHA */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-card {
+      background: #fff;
+      padding: 24px;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      width: 320px;
+      text-align: center;
+    }
+
+    .modal-card h4 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      color: var(--text-main);
+    }
+
+    .modal-card input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-sizing: border-box;
+      font-size: 1rem;
+      text-align: center;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .modal-buttons button {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .btn-confirm {
+      background: var(--shopee-orange);
+      color: #fff;
+    }
+
+    .btn-cancel {
+      background: #e2e8f0;
+      color: var(--text-main);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-nav">
+    <div class="btn-group">
+      <button id="btnGeral" class="active" onclick="setEsteira('geral')">🏆 RANKING GERAL</button>
+      <button id="btnTermo" onclick="setEsteira('termo')">🔥 ESTEIRA TERMO (OPS)</button>
+      <button id="btnLona" onclick="setEsteira('lona')">📦 ESTEIRA LONA (OPS)</button>
+      <button id="btnTermoNomes" onclick="setEsteira('termo_nomes')">🔒 TERMO (NOMES)</button>
+      <button id="btnLonaNomes" onclick="setEsteira('lona_nomes')">🔒 LONA (NOMES)</button>
+      <button id="btnGestores" onclick="setEsteira('gestores')">👔 GESTORES</button>
+    </div>
+
+    <div class="controls-right">
+      <button class="btn-refresh" onclick="fetchData()">
+        🔄 Atualizar Agora (<span id="lastUpdated">--:--:--</span>)
+      </button>
+
+      <select id="shiftSelect" onchange="render()" style="background: #ffffff; color: #222; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;">
+        <option value="ALL">Exibir Todos os Turnos / Geral</option>
+        <option value="T1">Turno T1 (06h às 14h)</option>
+        <option value="T2">Turno T2 (14h às 22h)</option>
+        <option value="T3">Turno T3 (22h às 06h)</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="bannerSummary"></div>
+  <div id="content" class="grid-container"></div>
+
+  <!-- MODAL DE SENHA -->
+  <div id="passwordModal" class="modal-overlay">
+    <div class="modal-card">
+      <h4>Acesso Restrito</h4>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">Digite a senha para acessar esta aba:</p>
+      <input type="password" id="inputModalPassword" placeholder="••••" onkeydown="if(event.key === 'Enter') confirmarSenha()">
+      <div class="modal-buttons">
+        <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
+        <button class="btn-confirm" onclick="confirmarSenha()">Entrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let fullData = null;
+    let currentEsteira = 'geral';
+    let targetAbaAposSenha = null;
+
+    async function fetchData() {
+      try {
+        const res = await fetch('/api/ranking');
+        const json = await res.json();
+        if (json.success) {
+          fullData = json;
+          const now = new Date();
+          document.getElementById('lastUpdated').innerText = now.toLocaleTimeString('pt-BR');
+          render();
+        }
+      } catch (err) {
+        console.error("Erro ao buscar API:", err);
+      }
+    }
+
+    function setEsteira(type) {
+      // Exige senha 1010 para Gestores, Termo (Nomes) e Lona (Nomes)
+      if (['gestores', 'termo_nomes', 'lona_nomes'].includes(type)) {
+        targetAbaAposSenha = type;
+        abrirModal();
+        return;
+      }
+      trocarAba(type);
+    }
+
+    function trocarAba(type) {
+      currentEsteira = type;
+      document.querySelectorAll('.btn-group button').forEach(b => b.classList.remove('active'));
+      
+      if(type === 'geral') document.getElementById('btnGeral').classList.add('active');
+      if(type === 'termo') document.getElementById('btnTermo').classList.add('active');
+      if(type === 'lona') document.getElementById('btnLona').classList.add('active');
+      if(type === 'termo_nomes') document.getElementById('btnTermoNomes').classList.add('active');
+      if(type === 'lona_nomes') document.getElementById('btnLonaNomes').classList.add('active');
+      if(type === 'gestores') document.getElementById('btnGestores').classList.add('active');
+      
+      render();
+    }
+
+    /* LÓGICA DO MODAL DE SENHA */
+    function abrirModal() {
+      const modal = document.getElementById('passwordModal');
+      const input = document.getElementById('inputModalPassword');
+      input.value = '';
+      modal.style.display = 'flex';
+      input.focus();
+    }
+
+    function fecharModal() {
+      document.getElementById('passwordModal').style.display = 'none';
+      targetAbaAposSenha = null;
+    }
+
+    function confirmarSenha() {
+      const input = document.getElementById('inputModalPassword');
+      if (input.value === '1010') {
+        const abaDestino = targetAbaAposSenha;
+        fecharModal();
+        if (abaDestino) trocarAba(abaDestino);
+      } else {
+        alert("Senha incorreta! Acesso negado.");
+        input.value = '';
+        input.focus();
+      }
+    }
+
+    function buildTable(list, isHora = false, limit = null, isGestor = false) {
+      if (!list || list.length === 0) return '<p style="color: var(--text-muted); font-size: 0.8rem; margin: 4px 0;">Sem registros.</p>';
+
+      const displayList = limit ? list.slice(0, limit) : list;
+      const colTitle = isGestor ? 'COLABORADOR' : 'Nº DO OPS';
+
+      let html = `<table><thead><tr><th>#</th><th>${colTitle}</th><th style="text-align:right;">` + (isHora ? 'Bips na Hora' : 'TOTAL SOMADO') + '</th></tr></thead><tbody>';
+      
+      displayList.forEach((item, idx) => {
+        const displayName = isGestor ? (item.fullName || item.name) : item.name;
+        html += `<tr><td class="rank">${idx + 1}º</td><td>${displayName}</td><td class="bips">${isHora ? item.bipsHora : item.total}</td></tr>`;
+      });
+      html += '</tbody></table>';
+      return html;
+    }
+
+    function render() {
+      const container = document.getElementById('content');
+      const banner = document.getElementById('bannerSummary');
+      container.innerHTML = '';
+      banner.innerHTML = '';
+
+      if (!fullData || !fullData[currentEsteira]) return;
+
+      const selectedOption = document.getElementById('shiftSelect').value;
+      const data = fullData[currentEsteira];
+      let shiftsToRender = selectedOption === 'ALL' ? ['T1', 'T2', 'T3'] : [selectedOption];
+
+      let somaBipsBanner = 0;
+
+      shiftsToRender.forEach(t => {
+        const shiftData = data.shiftRanking ? data.shiftRanking[t] : null;
+
+        if (shiftData) {
+          somaBipsBanner += shiftData.totalBipsGeral || 0;
+
+          if (currentEsteira === 'geral') {
+            const cardTotalFull = document.createElement('div');
+            cardTotalFull.className = 'card card-total-full';
+            cardTotalFull.innerHTML = `
+              <h3 style="color: #d97706;">🏆 RANKING TOTAL ACUMULADO (TODOS OS OPERADORES) - Turno ${t}</h3>
+            ` + buildTable(shiftData.rankingTotal, false, null, false);
+            container.appendChild(cardTotalFull);
+
+          } else if (currentEsteira === 'gestores') {
+            const cardGestorTotal = document.createElement('div');
+            cardGestorTotal.className = 'card card-gestores';
+            cardGestorTotal.innerHTML = `
+              <h3 style="color: #2563eb;">👔 RESUMO ACUMULADO DO TURNO - ${t}</h3>
+              <div class="gestores-split">
+                <div>
+                  <div class="sub-title">🔥 TOP 10 ESTEIRA TERMO</div>
+                  ${buildTable(shiftData.rankingTermoTotal, false, 10, true)}
+                </div>
+                <div>
+                  <div class="sub-title">📦 TOP 10 ESTEIRA LONA</div>
+                  ${buildTable(shiftData.rankingLonaTotal, false, 10, true)}
+                </div>
+              </div>
+            `;
+            container.appendChild(cardGestorTotal);
+
+          } else {
+            // Abas: termo, lona, termo_nomes e lona_nomes
+            const exibeNomeCompleto = currentEsteira.includes('_nomes');
+            
+            const cardTotal = document.createElement('div');
+            cardTotal.className = 'card card-total';
+            cardTotal.innerHTML = `
+              <h3 style="color: #d97706;">🏆 TOP 10 TOTAL SOMADO - Turno ${t}</h3>
+            ` + buildTable(shiftData.rankingTotal, false, 10, exibeNomeCompleto);
+            container.appendChild(cardTotal);
+
+            (shiftData.horas || []).forEach(h => {
+              const cardHora = document.createElement('div');
+              cardHora.className = 'card card-hora';
+              cardHora.innerHTML = `
+                <h3 style="color: var(--shopee-orange);">⚡ TOP 10 (Hora ${h.hora}) - Turno ${t}</h3>
+              ` + buildTable(h.top10, true, 10, exibeNomeCompleto);
+              container.appendChild(cardHora);
+            });
+          }
+        }
+      });
+
+      banner.innerHTML = `
+        <div class="banner-total">
+          <div>
+            <h2>TOTAL DE BIPS REALIZADOS (${currentEsteira.replace('_', ' ').toUpperCase()})</h2>
+            <small style="opacity:0.9;">Soma acumulada de todos os registros do período</small>
+          </div>
+          <div class="val">${somaBipsBanner.toLocaleString('pt-BR')} BIPS</div>
+        </div>
+      `;
+    }
+
+    fetchData();
+    setInterval(fetchData, 15000);
+  </script>
+</body>
+</html>

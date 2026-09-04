@@ -1,0 +1,14 @@
+Para rodar o npm run dev no terminal faça o seguinte:
+
+1º passo: abra o terminal cmd -> ao invés de clicar no + para abrir o terminal powershell
+utilize a seta para baixo que tem ao lado do +
+e ai selecione Command Prompt
+
+2º passo: rodar o código abaixo na pasta produtividade (cd produtividade)
+provavelmente está por padrão na pasta projetos, navegue até produtividade e rode:
+set PATH=%PATH%;C:\Users\SEAOps\Desktop\projetos\node\node-v22.23.2-win-x64\node-v22.23.2-win-x64
+
+3º passo: feito isso, escreva npm run dev dentro da pasta produtividade
+irá geral o link de localhost: http://localhost:5173/
+copie e abra numa aba nova do google chrome
+toda atualização no arquivo App.tsx irá aparecer no link de localhost
