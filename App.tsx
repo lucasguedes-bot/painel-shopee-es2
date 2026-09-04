@@ -459,7 +459,25 @@ export default function App() {
   };
 
   const dataForEsteira = fullData?.[currentEsteira];
-  const shiftData = dataForEsteira?.shiftRanking?.[shiftSelect];
+
+  // Mantém todas as faixas horárias visíveis mesmo quando ainda não há bips.
+  const shiftData: ShiftData = dataForEsteira?.shiftRanking?.[shiftSelect] ?? {
+    totalBipsGeral: 0,
+    rankingTotal: [],
+    horas: (SLOTS_TURNO[shiftSelect] || []).map((hora) => ({
+      hora: formatarFaixaHora(hora),
+      top10: [],
+    })),
+  };
+
+  // Garante as faixas também quando há dados, mas alguma hora ainda está vazia.
+  if (!shiftData.horas || shiftData.horas.length === 0) {
+    shiftData.horas = (SLOTS_TURNO[shiftSelect] || []).map((hora) => ({
+      hora: formatarFaixaHora(hora),
+      top10: [],
+    }));
+  }
+
   const gestoresConsolidado = getGestoresConsolidatedData();
 
   const formatDateLabel = (dateStr: string) => {
@@ -1002,7 +1020,8 @@ export default function App() {
       </div>
 
       {/* CONTEÚDO */}
-      {shiftData || currentEsteira === 'geral' || currentEsteira === 'gestores' ? (
+      {currentEsteira === 'geral' || currentEsteira === 'gestores' ||
+       ['termo', 'lona', 'termo_nomes', 'lona_nomes', 'inbound_bips'].includes(currentEsteira) ? (
         <div style={{ width: '100%' }}>
           {currentEsteira === 'gestores' ? (
             <div className="card" style={{ width: '100%' }}>
